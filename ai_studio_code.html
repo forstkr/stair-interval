@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>천국의계단 인터벌 타이머</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --surface-sub: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --accent: #f97316;
+      --accent-light: #fff7ed;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --radius: 16px;
+      --shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      touch-action: manipulation;
+    }
+
+    .app {
+      max-width: 480px;
+      min-height: 100dvh;
+      margin: 0 auto;
+      padding: 16px 16px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* 상단 헤더 */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .brand {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 7px 11px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-btn.muted {
+      color: var(--text-muted);
+      background: var(--surface-sub);
+    }
+
+    /* 탭 네비게이션 */
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 12px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 10px;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    .view {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .view.active {
+      display: flex;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    /* 타이머 뷰 */
+    .routine-select-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+    }
+
+    .routine-select-row label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .select-box {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-sub);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      max-width: 100%;
+    }
+
+    /* 전체 진행률 바 및 전체 남은 시간 */
+    .progress-card {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .total-remaining {
+      font-variant-numeric: tabular-nums;
+      color: var(--primary);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), #3b82f6);
+      border-radius: 999px;
+      transition: width 0.2s linear;
+    }
+
+    /* 메인 타이머 카드 */
+    .hero-card {
+      text-align: center;
+      padding: 26px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .status-badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--surface-sub);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .status-badge.running {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: #bfdbfe;
+    }
+
+    .status-badge.paused {
+      background: var(--accent-light);
+      color: var(--accent);
+      border-color: #fed7aa;
+    }
+
+    .status-badge.completed {
+      background: var(--success-light);
+      color: var(--success);
+      border-color: #a7f3d0;
+    }
+
+    .level-box {
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .level-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .current-level {
+      font-size: 3.6rem;
+      font-weight: 900;
+      line-height: 1.05;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+    }
+
+    .current-level.high-intensity {
+      color: var(--accent);
+    }
+
+    .segment-time {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin: 6px 0;
+    }
+
+    .segment-time.countdown-warn {
+      color: var(--danger);
+    }
+
+    .next-preview {
+      width: 100%;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--surface-sub);
+      border: 1px dashed var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.92rem;
+    }
+
+    .next-preview-label {
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .next-preview-value {
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 조작 버튼 (시작 / 일시정지 / 초기화) */
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .ctrl-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 16px 10px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.15s ease;
+    }
+
+    .ctrl-btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-start {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-pause {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-reset {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* 루틴 설정 뷰 */
+    .lock-notice {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--accent-light);
+      border: 1px solid #fed7aa;
+      color: #c2410c;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .lock-notice.show {
+      display: block;
+    }
+
+    .editor-header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .editor-top-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .input-text {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      background: var(--surface-sub);
+      outline: none;
+    }
+
+    .input-text:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    .small-btn {
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .small-btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .small-btn.danger {
+      color: var(--danger);
+      background: var(--danger-light);
+      border-color: #fecaca;
+    }
+
+    .small-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .routine-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .block-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .block-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+    }
+
+    .block-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .block-index {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+
+    .block-tools {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mini-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-sub);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mini-btn.del {
+      color: var(--danger);
+      border-color: #fecaca;
+      background: var(--danger-light);
+    }
+
+    .mini-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .block-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 10px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-group span {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface-sub);
+    }
+
+    .stepper button {
+      width: 36px;
+      height: 38px;
+      border: none;
+      background: #eef2f6;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .stepper input {
+      flex: 1;
+      width: 100%;
+      min-width: 0;
+      height: 38px;
+      border: none;
+      background: transparent;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      outline: none;
+    }
+
+    .time-inputs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .time-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-sub);
+      padding-right: 6px;
+      height: 38px;
+    }
+
+    .time-box input {
+      width: 100%;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      outline: none;
+    }
+
+    .time-box em {
+      font-style: normal;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .add-block-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 2px dashed #cbd5e1;
+      background: var(--surface);
+      color: var(--primary);
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .editor-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 헤더 -->
+    <header class="header">
+      <div class="brand">천국의계단 타이머</div>
+      <div class="header-actions">
+        <button id="soundToggleBtn" class="icon-btn" type="button">비프음 ON</button>
+      </div>
+    </header>
+
+    <!-- 탭 -->
+    <nav class="tabs">
+      <button id="tabTimer" class="tab-btn active" type="button">타이머</button>
+      <button id="tabEditor" class="tab-btn" type="button">루틴 설정</button>
+    </nav>
+
+    <!-- 1. 타이머 화면 -->
+    <section id="timerView" class="view active">
+      <div class="card routine-select-row">
+        <label for="routineSelect">선택 루틴</label>
+        <select id="routineSelect" class="select-box"></select>
+      </div>
+
+      <div class="card progress-card">
+        <div class="progress-meta">
+          <span id="segmentStepText">구간 1 / 1</span>
+          <span id="totalRemainingText" class="total-remaining">전체 남은 시간 00:00</span>
+        </div>
+        <div class="progress-track">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="card hero-card">
+        <div id="statusBadge" class="status-badge">대기 중</div>
+
+        <div class="level-box">
+          <span class="level-label">현재 레벨</span>
+          <div id="currentLevelText" class="current-level">LV 5</div>
+        </div>
+
+        <div id="segmentTimeText" class="segment-time">01:00</div>
+
+        <div class="next-preview">
+          <span class="next-preview-label">다음 구간</span>
+          <span id="nextPreviewText" class="next-preview-value">LV 10 (01:00)</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="btnStart" class="ctrl-btn btn-start" type="button">시작</button>
+        <button id="btnPause" class="ctrl-btn btn-pause" type="button" disabled>일시정지</button>
+        <button id="btnReset" class="ctrl-btn btn-reset" type="button">초기화</button>
+      </div>
+    </section>
+
+    <!-- 2. 루틴 설정 화면 -->
+    <section id="editorView" class="view">
+      <div id="lockNotice" class="lock-notice">
+        타이머 작동 중에는 루틴을 수정할 수 없어요. 초기화 후 수정해 주세요.
+      </div>
+
+      <div class="card editor-header">
+        <div class="editor-top-row">
+          <select id="editorRoutineSelect" class="select-box"></select>
+          <button id="btnNewRoutine" class="small-btn" type="button">+ 새 루틴</button>
+        </div>
+
+        <div class="editor-top-row">
+          <input id="routineNameInput" class="input-text" type="text" placeholder="루틴 이름 입력" maxlength="25" />
+          <button id="btnSaveRoutine" class="small-btn primary" type="button">저장</button>
+          <button id="btnDeleteRoutine" class="small-btn danger" type="button">삭제</button>
+        </div>
+      </div>
+
+      <div id="blockList" class="block-list"></div>
+
+      <button id="btnAddBlock" class="add-block-btn" type="button">+ 구간 추가</button>
+
+      <div class="card editor-footer">
+        <span id="editorSummaryText">총 0개 구간</span>
+        <button id="btnApplyAndGo" class="small-btn primary" type="button">타이머로 이동</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast">저장되었습니다</div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = "stairmaster_routines_v1";
+      const ACTIVE_ID_KEY = "stairmaster_active_id_v1";
+      const SOUND_KEY = "stairmaster_sound_v1";
+
+      const DEFAULT_ROUTINES = [
+        {
+          id: "default_pyramid",
+          name: "기본 피라미드 15분",
+          blocks: [
+            { level: 5, minutes: 3, seconds: 0 },
+            { level: 8, minutes: 3, seconds: 0 },
+            { level: 11, minutes: 3, seconds: 0 },
+            { level: 8, minutes: 3, seconds: 0 },
+            { level: 4, minutes: 3, seconds: 0 }
+          ]
+        },
+        {
+          id: "default_hiit",
+          name: "고강도 인터벌 12분",
+          blocks: [
+            { level: 5, minutes: 2, seconds: 0 },
+            { level: 13, minutes: 1, seconds: 0 },
+            { level: 6, minutes: 1, seconds: 30 },
+            { level: 14, minutes: 1, seconds: 0 },
+            { level: 6, minutes: 1, seconds: 30 },
+            { level: 15, minutes: 1, seconds: 0 },
+            { level: 5, minutes: 2, seconds: 0 },
+            { level: 4, minutes: 2, seconds: 0 }
+          ]
+        }
+      ];
+
+      // 상태 관리
+      let routines = [];
+      let activeRoutineId = "";
+      let editorBlocks = [];
+      let soundEnabled = true;
+
+      let timerStatus = "idle"; // idle | running | paused | completed
+      let currentBlockIndex = 0;
+      let blockRemainingMs = 0;
+      let lastTickTime = 0;
+      let rafId = null;
+      let lastCountdownSec = null;
+
+      let audioCtx = null;
+      let wakeLock = null;
+      let toastTimer = null;
+
+      // DOM 요소
+      const tabTimer = document.getElementById("tabTimer");
+      const tabEditor = document.getElementById("tabEditor");
+      const timerView = document.getElementById("timerView");
+      const editorView = document.getElementById("editorView");
+      const soundToggleBtn = document.getElementById("soundToggleBtn");
+
+      const routineSelect = document.getElementById("routineSelect");
+      const segmentStepText = document.getElementById("segmentStepText");
+      const totalRemainingText = document.getElementById("totalRemainingText");
+      const progressFill = document.getElementById("progressFill");
+      const statusBadge = document.getElementById("statusBadge");
+      const currentLevelText = document.getElementById("currentLevelText");
+      const segmentTimeText = document.getElementById("segmentTimeText");
+      const nextPreviewText = document.getElementById("nextPreviewText");
+
+      const btnStart = document.getElementById("btnStart");
+      const btnPause = document.getElementById("btnPause");
+      const btnReset = document.getElementById("btnReset");
+
+      const lockNotice = document.getElementById("lockNotice");
+      const editorRoutineSelect = document.getElementById("editorRoutineSelect");
+      const routineNameInput = document.getElementById("routineNameInput");
+      const btnNewRoutine = document.getElementById("btnNewRoutine");
+      const btnSaveRoutine = document.getElementById("btnSaveRoutine");
+      const btnDeleteRoutine = document.getElementById("btnDeleteRoutine");
+      const blockList = document.getElementById("blockList");
+      const btnAddBlock = document.getElementById("btnAddBlock");
+      const editorSummaryText = document.getElementById("editorSummaryText");
+      const btnApplyAndGo = document.getElementById("btnApplyAndGo");
+      const toastEl = document.getElementById("toast");
+
+      // 유틸 함수
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toastEl.classList.remove("show");
+        }, 2000);
+      }
+
+      function clamp(val, min, max) {
+        return Math.min(max, Math.max(min, val));
+      }
+
+      function getBlockMs(block) {
+        const totalSec = Math.max(1, (Number(block.minutes) || 0) * 60 + (Number(block.seconds) || 0));
+        return totalSec * 1000;
+      }
+
+      function formatMs(ms) {
+        const totalSec = Math.max(0, Math.ceil(ms / 1000));
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+      }
+
+      function getActiveRoutine() {
+        return routines.find((r) => r.id === activeRoutineId) || routines[0];
+      }
+
+      function getRoutineTotalMs(blocks) {
+        return blocks.reduce((sum, b) => sum + getBlockMs(b), 0);
+      }
+
+      // 저장소 로드/저장
+      function loadData() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              routines = parsed;
+            }
+          }
+        } catch (e) {
+          routines = [];
+        }
+
+        if (routines.length === 0) {
+          routines = JSON.parse(JSON.stringify(DEFAULT_ROUTINES));
+          saveRoutinesToStorage();
+        }
+
+        const savedId = localStorage.getItem(ACTIVE_ID_KEY);
+        if (savedId && routines.some((r) => r.id === savedId)) {
+          activeRoutineId = savedId;
+        } else {
+          activeRoutineId = routines[0].id;
+        }
+
+        const savedSound = localStorage.getItem(SOUND_KEY);
+        soundEnabled = savedSound !== "false";
+        updateSoundBtnUI();
+      }
+
+      function saveRoutinesToStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
+        localStorage.setItem(ACTIVE_ID_KEY, activeRoutineId);
+      }
+
+      // Web Audio API 비프음
+      function unlockAudio() {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
+        }
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+        // 모바일 사파리 오디오 잠금 해제용 무음 펄스
+        if (audioCtx) {
+          try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.01);
+          } catch (e) {}
+        }
+      }
+
+      function playTone(freq, duration, delay = 0, type = "sine", volume = 0.25) {
+        if (!soundEnabled || !audioCtx) return;
+        try {
+          if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+          }
+          const startTime = audioCtx.currentTime + delay;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, startTime);
+
+          gain.gain.setValueAtTime(0.001, startTime);
+          gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + duration + 0.02);
+        } catch (e) {}
+      }
+
+      function playBeep(kind) {
+        if (!soundEnabled) return;
+        if (kind === "countdown") {
+          playTone(880, 0.1, 0, "sine", 0.22);
+        } else if (kind === "transition") {
+          playTone(1174.66, 0.14, 0, "triangle", 0.3);
+          playTone(1567.98, 0.22, 0.14, "triangle", 0.3);
+        } else if (kind === "complete") {
+          playTone(523.25, 0.14, 0, "triangle", 0.28);
+          playTone(659.25, 0.14, 0.14, "triangle", 0.28);
+          playTone(783.99, 0.14, 0.28, "triangle", 0.28);
+          playTone(1046.5, 0.35, 0.42, "triangle", 0.32);
+        }
+      }
+
+      function updateSoundBtnUI() {
+        soundToggleBtn.textContent = soundEnabled ? "비프음 ON" : "비프음 OFF";
+        soundToggleBtn.classList.toggle("muted", !soundEnabled);
+      }
+
+      // Wake Lock (화면 꺼짐 방지)
+      async function requestWakeLock() {
+        if ("wakeLock" in navigator) {
+          try {
+            wakeLock = await navigator.wakeLock.request("screen");
+            wakeLock.addEventListener("release", () => {
+              wakeLock = null;
+            });
+          } catch (e) {}
+        }
+      }
+
+      async function releaseWakeLock() {
+        if (wakeLock) {
+          try {
+            await wakeLock.release();
+          } catch (e) {}
+          wakeLock = null;
+        }
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && timerStatus === "running") {
+          requestWakeLock();
+        }
+      });
+
+      // 타이머 로직
+      function resetTimerState() {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+        timerStatus = "idle";
+        currentBlockIndex = 0;
+        lastCountdownSec = null;
+        const routine = getActiveRoutine();
+        blockRemainingMs = routine.blocks.length > 0 ? getBlockMs(routine.blocks[0]) : 0;
+        releaseWakeLock();
+        renderTimerUI();
+        updateEditorLockState();
+      }
+
+      function startTimer() {
+        unlockAudio();
+        const routine = getActiveRoutine();
+        if (!routine || routine.blocks.length === 0) return;
+
+        if (timerStatus === "completed") {
+          currentBlockIndex = 0;
+          blockRemainingMs = getBlockMs(routine.blocks[0]);
+          lastCountdownSec = null;
+        }
+
+        if (timerStatus === "idle") {
+          playBeep("transition");
+        }
+
+        timerStatus = "running";
+        lastTickTime = performance.now();
+        requestWakeLock();
+        updateEditorLockState();
+        renderTimerUI();
+        loop();
+      }
+
+      function pauseTimer() {
+        if (timerStatus !== "running") return;
+        cancelAnimationFrame(rafId);
+        rafId = null;
+        timerStatus = "paused";
+        releaseWakeLock();
+        updateEditorLockState();
+        renderTimerUI();
+      }
+
+      function loop() {
+        if (timerStatus !== "running") return;
+        const now = performance.now();
+        const dt = now - lastTickTime;
+        lastTickTime = now;
+
+        const routine = getActiveRoutine();
+        const blocks = routine.blocks;
+
+        blockRemainingMs -= dt;
+
+        // 3, 2, 1 카운트다운 비프음
+        const secLeft = Math.ceil(blockRemainingMs / 1000);
+        if (blockRemainingMs > 0 && secLeft >= 1 && secLeft <= 3 && secLeft !== lastCountdownSec) {
+          lastCountdownSec = secLeft;
+          playBeep("countdown");
+        }
+
+        let didTransition = false;
+        let didComplete = false;
+
+        while (blockRemainingMs <= 0) {
+          if (currentBlockIndex < blocks.length - 1) {
+            const overflow = -blockRemainingMs;
+            currentBlockIndex++;
+            const nextMs = getBlockMs(blocks[currentBlockIndex]);
+            blockRemainingMs = Math.max(0, nextMs - overflow);
+            lastCountdownSec = null;
+            didTransition = true;
+          } else {
+            blockRemainingMs = 0;
+            timerStatus = "completed";
+            didComplete = true;
+            break;
+          }
+        }
+
+        if (didComplete) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+          releaseWakeLock();
+          playBeep("complete");
+          updateEditorLockState();
+        } else if (didTransition) {
+          playBeep("transition");
+        }
+
+        renderTimerUI();
+
+        if (timerStatus === "running") {
+          rafId = requestAnimationFrame(loop);
+        }
+      }
+
+      function renderRoutineDropdowns() {
+        const optionsHtml = routines
+          .map((r) => `<option value="${r.id}">${escapeHtml(r.name)}</option>`)
+          .join("");
+        routineSelect.innerHTML = optionsHtml;
+        routineSelect.value = activeRoutineId;
+
+        editorRoutineSelect.innerHTML = optionsHtml;
+        editorRoutineSelect.value = activeRoutineId;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function renderTimerUI() {
+        const routine = getActiveRoutine();
+        const blocks = routine.blocks;
+        const currentBlock = blocks[currentBlockIndex] || { level: 1, minutes: 1, seconds: 0 };
+
+        // 상태 뱃지
+        statusBadge.className = "status-badge";
+        if (timerStatus === "idle") {
+          statusBadge.textContent = "대기 중";
+        } else if (timerStatus === "running") {
+          statusBadge.textContent = "운동 진행 중";
+          statusBadge.classList.add("running");
+        } else if (timerStatus === "paused") {
+          statusBadge.textContent = "일시정지됨";
+          statusBadge.classList.add("paused");
+        } else if (timerStatus === "completed") {
+          statusBadge.textContent = "운동 완료!";
+          statusBadge.classList.add("completed");
+        }
+
+        // 구간 표시
+        segmentStepText.textContent = `구간 ${currentBlockIndex + 1} / ${blocks.length}`;
+
+        // 현재 레벨
+        currentLevelText.textContent = `LV ${currentBlock.level}`;
+        currentLevelText.classList.toggle("high-intensity", currentBlock.level >= 12);
+
+        // 현재 구간 남은 시간
+        segmentTimeText.textContent = formatMs(blockRemainingMs);
+        const secLeft = Math.ceil(blockRemainingMs / 1000);
+        segmentTimeText.classList.toggle(
+          "countdown-warn",
+          timerStatus === "running" && secLeft >= 1 && secLeft <= 3
+        );
+
+        // 다음 구간 미리보기
+        if (timerStatus === "completed") {
+          nextPreviewText.textContent = "모든 구간을 마쳤어요";
+        } else if (currentBlockIndex < blocks.length - 1) {
+          const nextBlock = blocks[currentBlockIndex + 1];
+          nextPreviewText.textContent = `LV ${nextBlock.level} (${formatMs(getBlockMs(nextBlock))})`;
+        } else {
+          nextPreviewText.textContent = "마지막 구간입니다";
+        }
+
+        // 전체 남은 시간 및 진행률 바
+        const totalMs = getRoutineTotalMs(blocks);
+        let remainingTotalMs = blockRemainingMs;
+        for (let i = currentBlockIndex + 1; i < blocks.length; i++) {
+          remainingTotalMs += getBlockMs(blocks[i]);
+        }
+        totalRemainingText.textContent = `전체 남은 시간 ${formatMs(remainingTotalMs)}`;
+
+        const progressPct = totalMs > 0 ? clamp(((totalMs - remainingTotalMs) / totalMs) * 100, 0, 100) : 0;
+        progressFill.style.width = progressPct.toFixed(1) + "%";
+
+        // 조작 버튼 상태
+        routineSelect.disabled = timerStatus === "running" || timerStatus === "paused";
+        if (timerStatus === "running") {
+          btnStart.disabled = true;
+          btnStart.textContent = "시작";
+          btnPause.disabled = false;
+          btnReset.disabled = false;
+        } else if (timerStatus === "paused") {
+          btnStart.disabled = false;
+          btnStart.textContent = "계속";
+          btnPause.disabled = true;
+          btnReset.disabled = false;
+        } else if (timerStatus === "completed") {
+          btnStart.disabled = false;
+          btnStart.textContent = "다시 시작";
+          btnPause.disabled = true;
+          btnReset.disabled = false;
+        } else {
+          btnStart.disabled = false;
+          btnStart.textContent = "시작";
+          btnPause.disabled = true;
+          btnReset.disabled = false;
+        }
+      }
+
+      // 루틴 에디터 로직
+      function loadEditorFromActiveRoutine() {
+        const routine = getActiveRoutine();
+        routineNameInput.value = routine.name;
+        editorBlocks = JSON.parse(JSON.stringify(routine.blocks));
+        renderEditorBlocks();
+      }
+
+      function updateEditorLockState() {
+        const isLocked = timerStatus === "running" || timerStatus === "paused";
+        lockNotice.classList.toggle("show", isLocked);
+        editorRoutineSelect.disabled = isLocked;
+        routineNameInput.disabled = isLocked;
+        btnNewRoutine.disabled = isLocked;
+        btnSaveRoutine.disabled = isLocked;
+        btnDeleteRoutine.disabled = isLocked || routines.length <= 1;
+        btnAddBlock.disabled = isLocked;
+        renderEditorBlocks();
+      }
+
+      function renderEditorBlocks() {
+        const isLocked = timerStatus === "running" || timerStatus === "paused";
+        blockList.innerHTML = "";
+
+        editorBlocks.forEach((block, idx) => {
+          const item = document.createElement("div");
+          item.className = "block-item";
+          item.innerHTML = `
+            <div class="block-top">
+              <span class="block-index">구간 ${idx + 1}</span>
+              <div class="block-tools">
+                <button class="mini-btn" type="button" data-action="up" ${idx === 0 || isLocked ? "disabled" : ""}>▲</button>
+                <button class="mini-btn" type="button" data-action="down" ${idx === editorBlocks.length - 1 || isLocked ? "disabled" : ""}>▼</button>
+                <button class="mini-btn del" type="button" data-action="del" ${editorBlocks.length <= 1 || isLocked ? "disabled" : ""}>✕</button>
+              </div>
+            </div>
+            <div class="block-inputs">
+              <div class="field-group">
+                <span>레벨 (1-20)</span>
+                <div class="stepper">
+                  <button type="button" data-action="lv-minus" ${isLocked ? "disabled" : ""}>-</button>
+                  <input type="number" min="1" max="20" value="${block.level}" data-field="level" ${isLocked ? "disabled" : ""} />
+                  <button type="button" data-action="lv-plus" ${isLocked ? "disabled" : ""}>+</button>
+                </div>
+              </div>
+              <div class="field-group">
+                <span>시간 (분 / 초)</span>
+                <div class="time-inputs">
+                  <div class="time-box">
+                    <input type="number" min="0" max="99" value="${block.minutes}" data-field="minutes" ${isLocked ? "disabled" : ""} />
+                    <em>분</em>
+                  </div>
+                  <div class="time-box">
+                    <input type="number" min="0" max="59" value="${block.seconds}" data-field="seconds" ${isLocked ? "disabled" : ""} />
+                    <em>초</em>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          // 이벤트 연결
+          item.addEventListener("click", (e) => {
+            const btn = e.target.closest("button");
+            if (!btn || btn.disabled) return;
+            const action = btn.dataset.action;
+
+            if (action === "up" && idx > 0) {
+              [editorBlocks[idx - 1], editorBlocks[idx]] = [editorBlocks[idx], editorBlocks[idx - 1]];
+              renderEditorBlocks();
+            } else if (action === "down" && idx < editorBlocks.length - 1) {
+              [editorBlocks[idx + 1], editorBlocks[idx]] = [editorBlocks[idx], editorBlocks[idx + 1]];
+              renderEditorBlocks();
+            } else if (action === "del" && editorBlocks.length > 1) {
+              editorBlocks.splice(idx, 1);
+              renderEditorBlocks();
+            } else if (action === "lv-minus") {
+              editorBlocks[idx].level = clamp(editorBlocks[idx].level - 1, 1, 20);
+              renderEditorBlocks();
+            } else if (action === "lv-plus") {
+              editorBlocks[idx].level = clamp(editorBlocks[idx].level + 1, 1, 20);
+              renderEditorBlocks();
+            }
+          });
+
+          item.querySelectorAll("input").forEach((input) => {
+            input.addEventListener("change", () => {
+              const field = input.dataset.field;
+              let val = parseInt(input.value, 10);
+              if (isNaN(val)) val = 0;
+
+              if (field === "level") {
+                val = clamp(val, 1, 20);
+                editorBlocks[idx].level = val;
+              } else if (field === "minutes") {
+                val = clamp(val, 0, 99);
+                editorBlocks[idx].minutes = val;
+              } else if (field === "seconds") {
+                val = clamp(val, 0, 59);
+                editorBlocks[idx].seconds = val;
+              }
+
+              if (editorBlocks[idx].minutes === 0 && editorBlocks[idx].seconds === 0) {
+                editorBlocks[idx].seconds = 10;
+                showToast("최소 1초 이상이어야 해서 10초로 설정했어요");
+              }
+
+              input.value = editorBlocks[idx][field];
+              updateEditorSummary();
+            });
+          });
+
+          blockList.appendChild(item);
+        });
+
+        updateEditorSummary();
+      }
+
+      function updateEditorSummary() {
+        const totalMs = getRoutineTotalMs(editorBlocks);
+        editorSummaryText.textContent = `총 ${editorBlocks.length}개 구간 · 전체 ${formatMs(totalMs)}`;
+      }
+
+      function saveCurrentEditorRoutine(showMsg = true) {
+        const name = routineNameInput.value.trim() || "나만의 루틴";
+        routineNameInput.value = name;
+
+        const targetIndex = routines.findIndex((r) => r.id === activeRoutineId);
+        if (targetIndex !== -1) {
+          routines[targetIndex].name = name;
+          routines[targetIndex].blocks = JSON.parse(JSON.stringify(editorBlocks));
+        }
+        saveRoutinesToStorage();
+        renderRoutineDropdowns();
+        if (timerStatus === "idle" || timerStatus === "completed") {
+          resetTimerState();
+        }
+        if (showMsg) {
+          showToast("루틴이 저장되었습니다");
+        }
+      }
+
+      // 이벤트 리스너
+      tabTimer.addEventListener("click", () => {
+        tabTimer.classList.add("active");
+        tabEditor.classList.remove("active");
+        timerView.classList.add("active");
+        editorView.classList.remove("active");
+      });
+
+      tabEditor.addEventListener("click", () => {
+        tabEditor.classList.add("active");
+        tabTimer.classList.remove("active");
+        editorView.classList.add("active");
+        timerView.classList.remove("active");
+        updateEditorLockState();
+      });
+
+      soundToggleBtn.addEventListener("click", () => {
+        unlockAudio();
+        soundEnabled = !soundEnabled;
+        localStorage.setItem(SOUND_KEY, String(soundEnabled));
+        updateSoundBtnUI();
+        if (soundEnabled) {
+          playBeep("countdown");
+        }
+      });
+
+      routineSelect.addEventListener("change", (e) => {
+        activeRoutineId = e.target.value;
+        saveRoutinesToStorage();
+        renderRoutineDropdowns();
+        loadEditorFromActiveRoutine();
+        resetTimerState();
+      });
+
+      editorRoutineSelect.addEventListener("change", (e) => {
+        activeRoutineId = e.target.value;
+        saveRoutinesToStorage();
+        renderRoutineDropdowns();
+        loadEditorFromActiveRoutine();
+        resetTimerState();
+      });
+
+      btnStart.addEventListener("click", startTimer);
+      btnPause.addEventListener("click", pauseTimer);
+      btnReset.addEventListener("click", () => {
+        resetTimerState();
+        showToast("타이머를 초기화했어요");
+      });
+
+      btnAddBlock.addEventListener("click", () => {
+        const last = editorBlocks[editorBlocks.length - 1] || { level: 5, minutes: 1, seconds: 0 };
+        editorBlocks.push({
+          level: last.level,
+          minutes: last.minutes,
+          seconds: last.seconds
+        });
+        renderEditorBlocks();
+      });
+
+      btnSaveRoutine.addEventListener("click", () => {
+        saveCurrentEditorRoutine(true);
+      });
+
+      btnNewRoutine.addEventListener("click", () => {
+        const newId = "routine_" + Date.now();
+        const newRoutine = {
+          id: newId,
+          name: `새 루틴 ${routines.length + 1}`,
+          blocks: [
+            { level: 5, minutes: 2, seconds: 0 },
+            { level: 10, minutes: 1, seconds: 0 }
+          ]
+        };
+        routines.push(newRoutine);
+        activeRoutineId = newId;
+        saveRoutinesToStorage();
+        renderRoutineDropdowns();
+        loadEditorFromActiveRoutine();
+        resetTimerState();
+        showToast("새 루틴을 추가했어요");
+      });
+
+      btnDeleteRoutine.addEventListener("click", () => {
+        if (routines.length <= 1) {
+          showToast("최소 1개의 루틴은 남아 있어야 해요");
+          return;
+        }
+        const current = getActiveRoutine();
+        if (!confirm(`"${current.name}" 루틴을 삭제할까요?`)) return;
+
+        routines = routines.filter((r) => r.id !== activeRoutineId);
+        activeRoutineId = routines[0].id;
+        saveRoutinesToStorage();
+        renderRoutineDropdowns();
+        loadEditorFromActiveRoutine();
+        resetTimerState();
+        showToast("루틴을 삭제했어요");
+      });
+
+      btnApplyAndGo.addEventListener("click", () => {
+        if (timerStatus !== "running" && timerStatus !== "paused") {
+          saveCurrentEditorRoutine(false);
+        }
+        tabTimer.click();
+      });
+
+      // 초기화
+      loadData();
+      renderRoutineDropdowns();
+      loadEditorFromActiveRoutine();
+      resetTimerState();
+    })();
+  </script>
+</body>
+</html>
