@@ -427,12 +427,6 @@
       cursor: not-allowed;
     }
 
-    .routine-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
     .block-list {
       display: flex;
       flex-direction: column;
@@ -667,14 +661,14 @@
 
         <div class="level-box">
           <span class="level-label">현재 레벨</span>
-          <div id="currentLevelText" class="current-level">LV 5</div>
+          <div id="currentLevelText" class="current-level">LV 4</div>
         </div>
 
-        <div id="segmentTimeText" class="segment-time">01:00</div>
+        <div id="segmentTimeText" class="segment-time">02:00</div>
 
         <div class="next-preview">
           <span class="next-preview-label">다음 구간</span>
-          <span id="nextPreviewText" class="next-preview-value">LV 10 (01:00)</span>
+          <span id="nextPreviewText" class="next-preview-value">LV 6 (02:00)</span>
         </div>
       </div>
 
@@ -722,8 +716,53 @@
       const STORAGE_KEY = "stairmaster_routines_v1";
       const ACTIVE_ID_KEY = "stairmaster_active_id_v1";
       const SOUND_KEY = "stairmaster_sound_v1";
+      const SEED_EUDDEUM_KEY = "stairmaster_seeded_euddeum_v1";
+
+      const EUDDEUM_PRESETS = [
+        {
+          id: "preset_euddeum_20",
+          name: "심으뜸 20분 빌드업",
+          blocks: [
+            { level: 4, minutes: 2, seconds: 0 },
+            { level: 6, minutes: 2, seconds: 0 },
+            { level: 4, minutes: 1, seconds: 0 },
+            { level: 8, minutes: 2, seconds: 0 },
+            { level: 5, minutes: 1, seconds: 0 },
+            { level: 8, minutes: 2, seconds: 0 },
+            { level: 5, minutes: 1, seconds: 0 },
+            { level: 9, minutes: 2, seconds: 0 },
+            { level: 5, minutes: 1, seconds: 0 },
+            { level: 10, minutes: 2, seconds: 0 },
+            { level: 5, minutes: 1, seconds: 0 },
+            { level: 11, minutes: 2, seconds: 0 },
+            { level: 5, minutes: 1, seconds: 0 }
+          ]
+        },
+        {
+          id: "preset_euddeum_30",
+          name: "심으뜸 30분 인터벌",
+          blocks: [
+            { level: 4, minutes: 2, seconds: 0 },
+            { level: 6, minutes: 3, seconds: 0 },
+            { level: 4, minutes: 1, seconds: 0 },
+            { level: 7, minutes: 3, seconds: 0 },
+            { level: 4, minutes: 1, seconds: 0 },
+            { level: 8, minutes: 3, seconds: 0 },
+            { level: 4, minutes: 1, seconds: 0 },
+            { level: 9, minutes: 3, seconds: 0 },
+            { level: 4, minutes: 1, seconds: 0 },
+            { level: 10, minutes: 3, seconds: 0 },
+            { level: 4, minutes: 1, seconds: 0 },
+            { level: 10, minutes: 5, seconds: 0 },
+            { level: 6, minutes: 1, seconds: 0 },
+            { level: 5, minutes: 1, seconds: 0 },
+            { level: 4, minutes: 1, seconds: 0 }
+          ]
+        }
+      ];
 
       const DEFAULT_ROUTINES = [
+        ...JSON.parse(JSON.stringify(EUDDEUM_PRESETS)),
         {
           id: "default_pyramid",
           name: "기본 피라미드 15분",
@@ -850,14 +889,33 @@
 
         if (routines.length === 0) {
           routines = JSON.parse(JSON.stringify(DEFAULT_ROUTINES));
-          saveRoutinesToStorage();
-        }
-
-        const savedId = localStorage.getItem(ACTIVE_ID_KEY);
-        if (savedId && routines.some((r) => r.id === savedId)) {
-          activeRoutineId = savedId;
-        } else {
+          localStorage.setItem(SEED_EUDDEUM_KEY, "true");
           activeRoutineId = routines[0].id;
+          saveRoutinesToStorage();
+        } else {
+          // 기존 접속자 브라우저에도 심으뜸 루틴 2종을 최초 1회 자동 추가
+          const seeded = localStorage.getItem(SEED_EUDDEUM_KEY);
+          if (seeded !== "true") {
+            const toPrepend = [];
+            EUDDEUM_PRESETS.forEach((preset) => {
+              if (!routines.some((r) => r.id === preset.id)) {
+                toPrepend.push(JSON.parse(JSON.stringify(preset)));
+              }
+            });
+            if (toPrepend.length > 0) {
+              routines = [...toPrepend, ...routines];
+              activeRoutineId = toPrepend[0].id;
+            }
+            localStorage.setItem(SEED_EUDDEUM_KEY, "true");
+            saveRoutinesToStorage();
+          } else {
+            const savedId = localStorage.getItem(ACTIVE_ID_KEY);
+            if (savedId && routines.some((r) => r.id === savedId)) {
+              activeRoutineId = savedId;
+            } else {
+              activeRoutineId = routines[0].id;
+            }
+          }
         }
 
         const savedSound = localStorage.getItem(SOUND_KEY);
@@ -881,7 +939,6 @@
         if (audioCtx && audioCtx.state === "suspended") {
           audioCtx.resume();
         }
-        // 모바일 사파리 오디오 잠금 해제용 무음 펄스
         if (audioCtx) {
           try {
             const osc = audioCtx.createOscillator();
@@ -1090,7 +1147,6 @@
         const blocks = routine.blocks;
         const currentBlock = blocks[currentBlockIndex] || { level: 1, minutes: 1, seconds: 0 };
 
-        // 상태 뱃지
         statusBadge.className = "status-badge";
         if (timerStatus === "idle") {
           statusBadge.textContent = "대기 중";
@@ -1105,14 +1161,11 @@
           statusBadge.classList.add("completed");
         }
 
-        // 구간 표시
         segmentStepText.textContent = `구간 ${currentBlockIndex + 1} / ${blocks.length}`;
 
-        // 현재 레벨
         currentLevelText.textContent = `LV ${currentBlock.level}`;
         currentLevelText.classList.toggle("high-intensity", currentBlock.level >= 12);
 
-        // 현재 구간 남은 시간
         segmentTimeText.textContent = formatMs(blockRemainingMs);
         const secLeft = Math.ceil(blockRemainingMs / 1000);
         segmentTimeText.classList.toggle(
@@ -1120,7 +1173,6 @@
           timerStatus === "running" && secLeft >= 1 && secLeft <= 3
         );
 
-        // 다음 구간 미리보기
         if (timerStatus === "completed") {
           nextPreviewText.textContent = "모든 구간을 마쳤어요";
         } else if (currentBlockIndex < blocks.length - 1) {
@@ -1130,7 +1182,6 @@
           nextPreviewText.textContent = "마지막 구간입니다";
         }
 
-        // 전체 남은 시간 및 진행률 바
         const totalMs = getRoutineTotalMs(blocks);
         let remainingTotalMs = blockRemainingMs;
         for (let i = currentBlockIndex + 1; i < blocks.length; i++) {
@@ -1141,7 +1192,6 @@
         const progressPct = totalMs > 0 ? clamp(((totalMs - remainingTotalMs) / totalMs) * 100, 0, 100) : 0;
         progressFill.style.width = progressPct.toFixed(1) + "%";
 
-        // 조작 버튼 상태
         routineSelect.disabled = timerStatus === "running" || timerStatus === "paused";
         if (timerStatus === "running") {
           btnStart.disabled = true;
@@ -1227,7 +1277,6 @@
             </div>
           `;
 
-          // 이벤트 연결
           item.addEventListener("click", (e) => {
             const btn = e.target.closest("button");
             if (!btn || btn.disabled) return;
