@@ -367,7 +367,7 @@
     }
 
     /* =========================================
-       가로형 와이드 미니 모드 UI
+       가로형 와이드 미니 모드 UI (방법 2 적용)
        ========================================= */
     .mini-dashboard {
       display: none;
@@ -401,7 +401,7 @@
     body.mini-active .mini-dashboard {
       display: flex;
       min-height: calc(100dvh - 12px);
-      max-height: 240px;
+      max-height: 250px;
     }
 
     .mini-progress-track {
@@ -425,13 +425,13 @@
       gap: 8px;
       padding: 5px 10px;
       border-bottom: 1px solid var(--border);
-      background: rgba(248, 250, 252, 0.7);
+      background: rgba(248, 250, 252, 0.8);
       flex-shrink: 0;
     }
 
     .mini-info-line {
-      font-size: 0.78rem;
-      font-weight: 700;
+      font-size: 0.82rem;
+      font-weight: 800;
       color: var(--text);
       white-space: nowrap;
       overflow: hidden;
@@ -441,7 +441,7 @@
 
     .mini-info-line .sep {
       color: #cbd5e1;
-      margin: 0 4px;
+      margin: 0 5px;
     }
 
     .mini-info-line .mini-total {
@@ -461,7 +461,7 @@
       color: var(--text);
       border-radius: 7px;
       padding: 3px 8px;
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
@@ -475,7 +475,7 @@
     .mini-main {
       flex: 1;
       display: grid;
-      grid-template-columns: 0.9fr 1.3fr 84px;
+      grid-template-columns: 0.8fr 1.45fr 80px;
       align-items: center;
       padding: 6px 10px;
       gap: 8px;
@@ -512,7 +512,7 @@
     }
 
     .mini-level {
-      font-size: clamp(1.6rem, 15vh, 2.7rem);
+      font-size: clamp(1.7rem, 15vh, 2.8rem);
       font-weight: 900;
       line-height: 1;
       color: var(--primary);
@@ -526,7 +526,7 @@
     }
 
     .mini-time {
-      font-size: clamp(2.1rem, 22vh, 3.6rem);
+      font-size: clamp(2.1rem, 20vh, 3.4rem);
       font-weight: 900;
       line-height: 1;
       color: var(--text);
@@ -539,13 +539,43 @@
       color: var(--danger);
     }
 
+    /* 남은 시간 바로 아래 다음 레벨 뱃지 */
+    .mini-next-badge {
+      margin-top: 5px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      font-size: clamp(0.82rem, 3.6vw, 0.98rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.25;
+    }
+
+    .mini-next-badge.high-intensity {
+      background: var(--accent-light);
+      border-color: #fed7aa;
+      color: #c2410c;
+    }
+
+    .mini-next-badge.done {
+      background: var(--surface-sub);
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+
     .mini-col-controls {
       display: flex;
       flex-direction: column;
       justify-content: center;
       gap: 4px;
       height: 100%;
-      max-height: 124px;
+      max-height: 128px;
     }
 
     .mini-ctrl-btn {
@@ -587,15 +617,19 @@
 
     @media (max-width: 360px) {
       .mini-main {
-        grid-template-columns: 0.85fr 1.25fr 72px;
+        grid-template-columns: 0.75fr 1.45fr 70px;
         gap: 4px;
         padding: 4px 8px;
       }
       .mini-level {
-        font-size: clamp(1.35rem, 13vh, 2.2rem);
+        font-size: clamp(1.4rem, 13vh, 2.2rem);
       }
       .mini-time {
-        font-size: clamp(1.75rem, 18vh, 2.9rem);
+        font-size: clamp(1.75rem, 17vh, 2.8rem);
+      }
+      .mini-next-badge {
+        font-size: 0.78rem;
+        padding: 2px 8px;
       }
     }
 
@@ -929,7 +963,7 @@
         </div>
       </div>
 
-      <!-- 가로형 와이드 미니 모드 화면 -->
+      <!-- 가로형 와이드 미니 모드 화면 (방법 2 적용) -->
       <div id="miniDashboard" class="mini-dashboard">
         <div class="mini-progress-track">
           <div id="miniProgressFill" class="mini-progress-fill"></div>
@@ -937,11 +971,9 @@
 
         <div class="mini-top-bar">
           <div class="mini-info-line">
-            <span id="miniStepText">1/1</span>
+            <span id="miniStepText">구간 1/1</span>
             <span class="sep">·</span>
             <span id="miniTotalText" class="mini-total">총 00:00</span>
-            <span class="sep">·</span>
-            <span id="miniNextText">다음 LV 6 (02:00)</span>
           </div>
           <div class="mini-top-actions">
             <button id="miniSoundBtn" class="mini-chip-btn" type="button">소리ON</button>
@@ -958,6 +990,7 @@
           <div class="mini-col-center">
             <span id="miniStatusLabel" class="mini-sub-label">대기 중</span>
             <div id="miniTimeText" class="mini-time">02:00</div>
+            <div id="miniNextBadge" class="mini-next-badge">다음 ▶ LV 6 (02:00)</div>
           </div>
 
           <div class="mini-col-controls">
@@ -1127,7 +1160,7 @@
       const miniProgressFill = document.getElementById("miniProgressFill");
       const miniStepText = document.getElementById("miniStepText");
       const miniTotalText = document.getElementById("miniTotalText");
-      const miniNextText = document.getElementById("miniNextText");
+      const miniNextBadge = document.getElementById("miniNextBadge");
       const miniSoundBtn = document.getElementById("miniSoundBtn");
       const miniExitBtn = document.getElementById("miniExitBtn");
       const miniLevelText = document.getElementById("miniLevelText");
@@ -1509,7 +1542,7 @@
 
         // 구간 정보
         segmentStepText.textContent = `구간 ${currentBlockIndex + 1} / ${blocks.length}`;
-        miniStepText.textContent = `${currentBlockIndex + 1}/${blocks.length}`;
+        miniStepText.textContent = `구간 ${currentBlockIndex + 1}/${blocks.length}`;
 
         // 현재 레벨
         const lvStr = `LV ${currentBlock.level}`;
@@ -1529,22 +1562,26 @@
         miniTimeText.classList.toggle("countdown-warn", isCountdownWarn);
         miniDashboard.classList.toggle("countdown-warn", isCountdownWarn);
 
-        // 다음 구간 미리보기
+        // 다음 구간 미리보기 (일반 화면 + 미니모드 뱃지)
         let nextStr = "";
-        let miniNextStr = "";
+        miniNextBadge.className = "mini-next-badge";
         if (timerStatus === "completed") {
           nextStr = "모든 구간을 마쳤어요";
-          miniNextStr = "운동 완료!";
+          miniNextBadge.textContent = "운동 완료!";
+          miniNextBadge.classList.add("done");
         } else if (currentBlockIndex < blocks.length - 1) {
           const nextBlock = blocks[currentBlockIndex + 1];
           nextStr = `LV ${nextBlock.level} (${formatMs(getBlockMs(nextBlock))})`;
-          miniNextStr = `다음 ${nextStr}`;
+          miniNextBadge.textContent = `다음 ▶ ${nextStr}`;
+          if (nextBlock.level >= 12) {
+            miniNextBadge.classList.add("high-intensity");
+          }
         } else {
           nextStr = "마지막 구간입니다";
-          miniNextStr = "마지막 구간";
+          miniNextBadge.textContent = "마지막 구간";
+          miniNextBadge.classList.add("done");
         }
         nextPreviewText.textContent = nextStr;
-        miniNextText.textContent = miniNextStr;
 
         // 전체 남은 시간 및 진행률 바
         const totalMs = getRoutineTotalMs(blocks);
