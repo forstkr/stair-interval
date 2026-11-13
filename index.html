@@ -539,9 +539,9 @@
       color: var(--danger);
     }
 
-    /* 남은 시간 바로 아래 다음 레벨 뱃지 */
+    /* 남은 시간 위쪽 다음 레벨 뱃지 */
     .mini-next-badge {
-      margin-top: 5px;
+      margin-bottom: 4px;
       padding: 3px 10px;
       border-radius: 999px;
       background: var(--primary-light);
@@ -555,6 +555,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 1.25;
+    }
+
+    #miniStatusLabel {
+      margin-top: 3px;
+      margin-bottom: 0;
     }
 
     .mini-next-badge.high-intensity {
@@ -988,9 +993,9 @@
           </div>
 
           <div class="mini-col-center">
-            <span id="miniStatusLabel" class="mini-sub-label">대기 중</span>
-            <div id="miniTimeText" class="mini-time">02:00</div>
             <div id="miniNextBadge" class="mini-next-badge">다음 ▶ LV 6 (02:00)</div>
+            <div id="miniTimeText" class="mini-time">02:00</div>
+            <span id="miniStatusLabel" class="mini-sub-label">대기 중</span>
           </div>
 
           <div class="mini-col-controls">
