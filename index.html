@@ -912,6 +912,93 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+
+    /* 소리 토글 스위치 */
+    .sound-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 5px 9px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .sound-switch:not(.is-on) {
+      color: var(--text-muted);
+      background: var(--surface-sub);
+    }
+
+    .switch-track {
+      position: relative;
+      width: 34px;
+      height: 20px;
+      border-radius: 999px;
+      background: #cbd5e1;
+      transition: background-color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .sound-switch.is-on .switch-track,
+    .mini-sound-switch.is-on .switch-track {
+      background: var(--primary);
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+      transition: transform 0.2s ease;
+    }
+
+    .sound-switch.is-on .switch-thumb {
+      transform: translateX(14px);
+    }
+
+    /* 미니모드용 작은 토글 스위치 */
+    .mini-sound-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 2px 7px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .mini-sound-switch:not(.is-on) {
+      color: var(--text-muted);
+      background: var(--surface-sub);
+    }
+
+    .mini-sound-switch .switch-track {
+      width: 28px;
+      height: 16px;
+    }
+
+    .mini-sound-switch .switch-thumb {
+      width: 12px;
+      height: 12px;
+    }
+
+    .mini-sound-switch.is-on .switch-thumb {
+      transform: translateX(12px);
+    }
   </style>
 </head>
 <body>
@@ -921,7 +1008,10 @@
       <div class="brand">천국의계단 타이머</div>
       <div class="header-actions">
         <button id="miniToggleBtn" class="icon-btn" type="button">미니모드</button>
-        <button id="soundToggleBtn" class="icon-btn" type="button">비프음 ON</button>
+        <button id="soundToggleBtn" class="sound-switch is-on" type="button" role="switch" aria-checked="true">
+          <span>비프음</span>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </button>
       </div>
     </header>
 
@@ -986,7 +1076,10 @@
             <span id="miniTotalText" class="mini-total">총 00:00</span>
           </div>
           <div class="mini-top-actions">
-            <button id="miniSoundBtn" class="mini-chip-btn" type="button">소리ON</button>
+            <button id="miniSoundBtn" class="mini-sound-switch is-on" type="button" role="switch" aria-checked="true">
+              <span>소리</span>
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </button>
             <button id="miniExitBtn" class="mini-chip-btn" type="button">원래대로</button>
           </div>
         </div>
@@ -1357,11 +1450,11 @@
       }
 
       function updateSoundBtnUI() {
-        soundToggleBtn.textContent = soundEnabled ? "비프음 ON" : "비프음 OFF";
-        soundToggleBtn.classList.toggle("muted", !soundEnabled);
+        soundToggleBtn.classList.toggle("is-on", soundEnabled);
+        soundToggleBtn.setAttribute("aria-checked", String(soundEnabled));
 
-        miniSoundBtn.textContent = soundEnabled ? "소리ON" : "음소거";
-        miniSoundBtn.classList.toggle("muted", !soundEnabled);
+        miniSoundBtn.classList.toggle("is-on", soundEnabled);
+        miniSoundBtn.setAttribute("aria-checked", String(soundEnabled));
       }
 
       function toggleSound() {
